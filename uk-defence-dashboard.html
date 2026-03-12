@@ -509,6 +509,9 @@
             <li><a href="https://commonslibrary.parliament.uk/research-briefings/cbp-7313/" target="_blank">House of Commons Library – Brief Guide to Previous Defence Reviews (CBP-7313)</a></li>
             <li><a href="https://commonslibrary.parliament.uk/research-briefings/cbp-9477/" target="_blank">House of Commons Library – Military Assistance to Ukraine (CBP-9477)</a></li>
             <li><a href="https://www.gov.uk/government/statistics/defence-departmental-resources-2025" target="_blank">MOD Departmental Resources 2025</a></li>
+            <li><a href="https://milex.sipri.org/" target="_blank">SIPRI Military Expenditure Database (downloadable GBP time series)</a></li>
+            <li><a href="https://ifs.org.uk/publications/uk-defence-spending-composition-commitments-and-challenges" target="_blank">IFS Green Budget 2025 – UK Defence Spending Composition</a></li>
+            <li><a href="https://data.worldbank.org/indicator/MS.MIL.XPND.GD.ZS?locations=GB" target="_blank">World Bank – UK Military Expenditure (% of GDP)</a></li>
         </ul>
     </div>
 
@@ -526,9 +529,15 @@
             outside the core defence budget. These are shown separately. Data before FY 2001/02 is estimated.<br>
             <strong>Personnel strength:</strong> Regular forces (trained and untrained). Reserve and volunteer forces are excluded.
             Civilian figures include trading funds (e.g. DSTL, DECA) where available.<br>
-            <strong>Data quality:</strong> Category breakdowns for earlier years (pre-1990) use broader NATO-consistent categories
-            and may not align exactly with later MOD accounting classifications. Figures are compiled from multiple official sources
-            and may show minor discrepancies with any single publication due to rounding and definitional changes over the period.
+            <strong>Series breaks:</strong> There is a break in the spending series around 2001/02 (cash to NCR accounting) and 2010/11
+            (Clear Line of Sight reforms). The 2022/23 figure includes ~£3bn IFRS 16 uplift (non-cash). Direct year-on-year
+            comparisons across these breaks should be made with caution.<br>
+            <strong>Definition differences:</strong> MOD Total DEL, COFOG defence, and NATO-qualified spending give different totals.
+            NATO definition is broadest (~£64.5bn in 2024 vs ~£60.2bn MOD Total DEL). GDP% figures use the NATO definition where available.<br>
+            <strong>Nuclear:</strong> Nuclear deterrent spending (~£9.4bn in 2023/24) accounts for approximately half of all equipment spending
+            and is a large and growing share of the defence budget.<br>
+            <strong>Data quality:</strong> Category breakdowns for earlier years (pre-1998) are estimated from broader classifications.
+            Figures are compiled from HoC Library research papers, MOD Departmental Resources, IFS analysis, SIPRI, NATO, and World Bank data.
         </p>
     </div>
 </div>
@@ -546,25 +555,28 @@ const DATA = {
     years: [1985,1986,1987,1988,1989,1990,1991,1992,1993,1994,1995,1996,1997,1998,1999,2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024],
 
     // HM Treasury GDP deflators (2023/24 = 100)
-    // Source: HM Treasury GDP Deflators March 2025, rebased to 2023/24
-    deflator: [28.0,29.1,30.5,32.2,34.1,36.2,38.3,40.1,41.6,42.5,43.8,45.4,46.8,48.1,49.3,50.3,51.5,53.0,54.6,56.3,58.0,59.9,62.0,64.2,65.4,67.2,68.7,69.8,71.0,72.4,73.5,75.1,76.9,78.6,80.5,82.4,85.2,90.5,96.4,100.0],
+    // Source: HM Treasury GDP Deflators Dec 2025 (ONS series L8GG), rebased to 2023/24
+    deflator: [33.5,34.6,36.3,38.6,41.2,44.2,46.8,48.3,49.5,50.3,51.8,53.5,55.1,56.8,57.8,58.6,59.7,61.4,63.1,64.7,66.2,68.1,69.9,69.9,71.1,72.6,74.0,75.2,76.7,78.0,78.7,80.5,82.1,84.0,85.9,88.0,90.2,94.1,100.0,102.5],
 
     // Core MOD DEL (Departmental Expenditure Limit) in nominal £bn
-    // Source: MOD Annual Reports, PESA, UKDS Table 1.2
-    totalNominal: [17.9,18.2,18.8,19.2,20.3,22.3,24.0,23.6,23.5,22.7,21.4,21.5,21.2,22.3,22.6,23.6,24.3,25.6,26.8,27.0,28.4,29.6,32.0,33.4,36.9,37.4,36.0,34.4,34.0,34.6,35.1,35.3,36.4,37.3,38.5,41.5,42.4,46.0,52.5,55.6],
+    // Source: HoC RP97/135 (85-97), HoC CBP-8175 (06-16), MOD Dept Resources 2025 (17-24)
+    // Note: series break ~2001 (cash to NCR) and ~2010 (Clear Line of Sight)
+    totalNominal: [18.2,18.4,18.9,19.2,20.8,21.7,22.9,22.9,22.8,22.6,21.5,22.3,21.6,22.3,22.6,23.2,24.0,25.4,27.0,28.5,30.5,34.0,37.4,38.6,40.2,39.5,37.2,34.3,34.6,34.4,35.1,35.3,36.6,38.0,39.8,42.4,45.9,52.8,53.9,60.2],
 
     // Category breakdowns - nominal £bn
+    // Approximate splits based on IFS Green Budget 2025, MOD Dept Resources, HoC CBP-8175
+    // Personnel share: ~42% (1985) declining to ~29% (2024). Equipment: ~36% rising to ~36% but dipping mid-period
     // Personnel (military pay, civilian pay, pensions, allowances)
-    personnelNominal: [7.5,7.7,7.9,8.1,8.6,9.5,10.3,10.2,10.2,9.7,9.0,9.1,9.0,9.3,9.4,9.7,10.0,10.4,10.8,10.9,11.3,11.6,12.4,12.8,13.8,13.9,13.2,12.5,12.3,12.4,12.5,12.4,12.7,13.0,13.5,14.6,14.9,16.1,17.8,18.9],
+    personnelNominal: [7.6,7.7,7.9,7.9,8.5,9.0,9.5,9.5,9.5,9.4,9.0,9.3,9.0,9.3,9.4,9.6,9.8,10.4,10.8,11.0,11.6,12.6,13.5,14.0,14.5,14.6,13.4,12.4,12.6,12.7,12.7,12.4,12.4,11.8,11.5,13.6,14.2,15.8,15.6,17.5],
 
-    // Equipment, support & R&D
-    equipmentNominal: [6.5,6.6,6.9,7.1,7.5,8.1,8.5,8.3,8.2,8.0,7.7,7.7,7.5,8.1,8.3,8.8,9.1,9.8,10.2,10.4,11.1,11.8,12.8,13.6,15.3,15.5,14.9,14.3,14.2,14.6,14.9,15.4,16.1,16.5,17.0,18.5,19.0,20.8,24.0,25.5],
+    // Equipment, support & R&D (incl. nuclear deterrent)
+    equipmentNominal: [6.6,6.6,6.8,6.9,7.5,7.8,8.2,8.2,8.0,7.9,7.5,7.8,7.6,7.8,8.0,8.4,8.7,9.4,10.0,10.5,11.6,12.9,14.6,15.1,16.1,15.5,14.2,13.2,13.4,13.8,14.5,15.1,16.4,17.5,18.8,19.1,21.0,24.5,25.0,27.4],
 
     // Infrastructure, estates, IT, admin
-    infrastructureNominal: [2.3,2.3,2.4,2.4,2.5,2.8,3.1,3.0,3.0,2.9,2.7,2.7,2.7,2.8,2.8,2.9,3.0,3.1,3.3,3.2,3.4,3.5,3.8,3.8,4.2,4.3,4.2,4.0,3.9,3.9,3.9,3.8,3.8,3.9,4.0,4.2,4.2,4.5,5.1,5.3],
+    infrastructureNominal: [2.0,2.1,2.2,2.3,2.5,2.6,2.7,2.7,2.8,2.8,2.6,2.7,2.6,2.7,2.7,2.7,2.9,3.0,3.2,3.6,3.7,4.4,4.8,4.9,5.0,4.7,4.8,4.4,4.3,4.0,3.9,3.8,3.7,4.2,4.5,4.5,4.8,5.5,5.6,6.2],
 
     // Other (war pensions, miscellaneous, adjustments)
-    otherNominal: [1.6,1.6,1.6,1.6,1.7,1.9,2.1,2.1,2.1,2.1,2.0,2.0,2.0,2.1,2.1,2.2,2.2,2.3,2.5,2.5,2.6,2.7,3.0,3.2,3.6,3.7,3.7,3.6,3.6,3.7,3.8,3.7,3.8,3.9,4.0,4.2,4.3,4.6,5.6,5.9],
+    otherNominal: [2.0,2.0,2.0,2.1,2.3,2.3,2.5,2.5,2.5,2.5,2.4,2.5,2.4,2.5,2.5,2.5,2.6,2.6,3.0,3.4,3.6,4.1,4.5,4.6,4.6,4.7,4.8,4.3,4.3,3.9,4.0,4.0,4.1,4.5,5.0,5.2,5.9,7.0,7.7,9.1],
 
     // Net Additional Cost of Military Operations (NACMO) - funded from Treasury Reserve
     // Source: HoC Library SN03139, MOD Annual Reports, Chilcot Report data
@@ -574,12 +586,12 @@ const DATA = {
     nacmoNominal: [0.1,0.1,0.1,0.1,0.1,0.2,1.8,0.4,0.3,0.2,0.3,0.3,0.2,0.2,0.5,0.2,0.5,1.3,2.6,2.1,1.8,2.2,3.0,4.4,5.5,5.4,4.0,2.8,1.2,0.4,0.3,0.3,0.3,0.3,0.3,0.3,0.3,2.5,2.3,3.0],
 
     // Defence as % of GDP (core budget, excluding NACMO)
-    // Source: NATO, SIPRI, HoC Library
-    gdpPct: [5.1,4.9,4.6,4.3,4.1,4.0,3.9,3.7,3.5,3.3,3.0,2.9,2.7,2.6,2.5,2.5,2.4,2.4,2.4,2.3,2.3,2.3,2.3,2.4,2.6,2.6,2.5,2.3,2.2,2.1,2.1,2.1,2.1,2.1,2.1,2.3,2.2,2.2,2.3,2.3],
+    // Source: HoC RP97/135 (85-97), World Bank (98-13), NATO (14-24)
+    gdpPct: [5.0,4.7,4.3,4.0,4.0,3.9,3.9,3.7,3.5,3.3,3.0,2.9,2.6,2.5,2.4,2.4,2.4,2.5,2.6,2.5,2.5,2.4,2.4,2.5,2.7,2.5,2.4,2.3,2.2,2.1,2.0,2.0,2.1,2.1,2.1,2.3,2.3,2.2,2.3,2.3],
 
     // Including NACMO
-    // Significant operational costs during Iraq/Afghanistan (2002-2014) and Ukraine (2022+)
-    gdpPctIncOps: [5.2,5.0,4.7,4.4,4.2,4.1,4.3,3.8,3.6,3.4,3.1,3.0,2.7,2.6,2.6,2.5,2.5,2.5,2.6,2.5,2.5,2.6,2.8,2.8,3.0,2.9,2.8,2.5,2.3,2.2,2.1,2.1,2.1,2.1,2.1,2.3,2.2,2.3,2.4,2.4],
+    // Peak operational spending during Iraq/Afghanistan (2003-2014) and Ukraine aid (2022+)
+    gdpPctIncOps: [5.0,4.7,4.3,4.0,4.0,3.9,4.1,3.7,3.5,3.3,3.0,2.9,2.6,2.5,2.5,2.4,2.4,2.6,2.8,2.7,2.6,2.6,2.7,2.9,3.1,2.9,2.6,2.5,2.3,2.1,2.0,2.0,2.1,2.1,2.1,2.3,2.3,2.3,2.4,2.5],
 
     // Armed Forces regular strength (thousands)
     // Source: MOD Quarterly Service Personnel Statistics, HoC Library CBP-7930, MOD FOI 2017/04440

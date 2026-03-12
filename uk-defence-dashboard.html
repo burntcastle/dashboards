@@ -472,10 +472,11 @@
                         <th>Programme</th>
                         <th>Service</th>
                         <th>Type</th>
-                        <th>Approx. Cost (£bn, outturn)</th>
+                        <th>Cost (£bn)</th>
                         <th>Timeline</th>
                         <th>Status</th>
-                        <th style="width:120px">Relative Cost</th>
+                        <th>Notes</th>
+                        <th style="width:100px">Scale</th>
                     </tr>
                 </thead>
                 <tbody id="programmesBody"></tbody>
@@ -499,6 +500,11 @@
             <li><a href="https://www.nao.org.uk/reports/?search=defence+equipment+plan" target="_blank">NAO Reports on the Equipment Plan</a></li>
             <li><a href="https://www.gov.uk/government/publications/integrated-review-refresh-2023-responding-to-a-more-contested-and-volatile-world" target="_blank">Integrated Review Refresh 2023</a></li>
             <li><a href="https://www.gov.uk/government/publications/strategic-defence-review-2025" target="_blank">Strategic Defence Review 2025</a></li>
+            <li><a href="https://commonslibrary.parliament.uk/research-briefings/cbp-7930/" target="_blank">House of Commons Library – UK Armed Forces Personnel Statistics (CBP-7930)</a></li>
+            <li><a href="https://commonslibrary.parliament.uk/research-briefings/cbp-8166/" target="_blank">House of Commons Library – Cost of UK Strategic Nuclear Deterrent (CBP-8166)</a></li>
+            <li><a href="https://www.nao.org.uk/reports/the-equipment-plan/" target="_blank">NAO – The Equipment Plan (annual reports)</a></li>
+            <li><a href="https://commonslibrary.parliament.uk/research-briefings/cbp-9843/" target="_blank">House of Commons Library – AUKUS Submarine Programme (CBP-9843)</a></li>
+            <li><a href="https://commonslibrary.parliament.uk/research-briefings/cbp-9764/" target="_blank">House of Commons Library – Ajax Programme (CBP-9764)</a></li>
         </ul>
     </div>
 
@@ -569,36 +575,40 @@ const DATA = {
     gdpPctIncOps: [5.2,5.0,4.7,4.4,4.2,4.1,4.3,3.8,3.6,3.4,3.1,3.0,2.7,2.6,2.5,2.5,2.5,2.5,2.6,2.5,2.4,2.5,2.6,2.7,2.9,2.8,2.7,2.4,2.3,2.2,2.1,2.1,2.1,2.1,2.1,2.3,2.2,2.2,2.3,2.3],
 
     // Armed Forces regular strength (thousands)
-    // Source: UKDS, MOD Quarterly Service Personnel Statistics
-    army: [163,161,159,157,156,153,148,141,134,119,112,110,110,110,110,110,110,110,112,112,109,108,107,106,106,102,100,98,94,90,87,82,82,81,80,79,79,79,79,76],
-    navy: [70,69,67,66,65,64,63,60,57,54,49,48,47,46,44,43,42,41,41,40,39,39,38,38,38,36,35,34,33,33,33,32,32,33,33,33,33,33,33,33],
-    raf: [93,92,90,89,89,88,85,82,78,73,65,60,57,55,55,54,53,53,53,51,49,48,46,43,42,40,39,38,35,34,33,33,33,33,33,33,33,33,32,32],
-    civilian: [195,190,185,178,170,165,155,142,131,120,115,113,108,105,101,97,95,96,97,99,97,94,88,85,83,80,73,68,63,59,57,56,57,58,59,60,61,62,63,63],
+    // Source: MOD Quarterly Service Personnel Statistics, HoC Library CBP-7930, MOD FOI 2017/04440
+    // Figures are total regulars (trained + untrained) at 1 April each year
+    army: [163,161,159,157,153,152,148,141,134,119,112,110,110,110,110,110,110,110,112,112,109,108,106,105,107,109,106,104,99,95,89,82,82,81,80,79,79,79,76,74],
+    navy: [70,68,67,66,66,64,63,60,57,54,49,48,47,46,44,43,42,41,41,40,39,39,39,39,38,39,38,36,34,33,33,32,32,33,33,33,33,33,33,32],
+    raf: [93,91,90,89,89,88,85,82,78,73,68,64,60,57,55,55,54,53,53,51,49,49,45,43,44,44,42,40,37,35,34,33,33,33,33,33,33,33,32,31],
+    civilian: [170,165,160,155,150,145,140,132,125,120,119,115,110,105,101,100,97,96,97,99,90,88,85,83,87,76,73,68,63,56,57,56,57,58,57,58,59,58,57,56],
 
-    // Reserve forces (thousands) - trained strength
-    reserves: [320,310,300,290,285,280,275,265,255,245,235,225,215,205,195,195,190,188,186,185,183,180,175,170,165,160,155,142,130,123,120,127,130,133,136,137,140,142,145,148]
+    // Reserve forces (thousands) - volunteer reserves, trained strength
+    // Source: MOD Reserve Forces Strength Index
+    reserves: [73,72,71,70,69,68,67,64,61,58,55,52,49,47,45,44,43,42,41,40,38,36,34,32,28,22,18,15,14,20,24,27,29,30,31,32,33,32,30,32]
 };
 
 // Major programmes data
+// Programme costs from NAO, HoC Library, MOD Equipment Plan reports
+// Costs are approximate total programme costs in outturn prices (nominal £bn)
 const PROGRAMMES = [
-    {name:"Trident (Vanguard class)", service:"Royal Navy", type:"Nuclear Deterrent", cost:14.9, start:1986, end:2001, status:"Complete"},
-    {name:"Dreadnought class SSBN", service:"Royal Navy", type:"Nuclear Deterrent", cost:31.0, start:2016, end:2035, status:"In Build"},
-    {name:"Eurofighter Typhoon", service:"RAF", type:"Fast Jet", cost:22.0, start:1988, end:2025, status:"In Service"},
-    {name:"F-35B Lightning II", service:"RAF/RN", type:"Fast Jet", cost:13.5, start:2009, end:2035, status:"Delivering"},
-    {name:"Queen Elizabeth Carriers", service:"Royal Navy", type:"Capital Ship", cost:7.6, start:2007, end:2020, status:"In Service"},
-    {name:"Type 45 Destroyer", service:"Royal Navy", type:"Escort", cost:7.5, start:1999, end:2013, status:"In Service"},
-    {name:"Type 26 Frigate", service:"Royal Navy", type:"Escort", cost:9.0, start:2017, end:2035, status:"In Build"},
-    {name:"Type 31 Frigate", service:"Royal Navy", type:"Escort", cost:1.7, start:2019, end:2028, status:"In Build"},
-    {name:"Astute class SSN", service:"Royal Navy", type:"Submarine", cost:11.0, start:1997, end:2026, status:"Delivering"},
-    {name:"Ajax AFV", service:"Army", type:"Armoured Vehicle", cost:5.5, start:2010, end:2030, status:"Troubled"},
-    {name:"Challenger 2 LEP / CR3", service:"Army", type:"MBT", cost:1.3, start:2018, end:2030, status:"In Progress"},
-    {name:"A400M Atlas", service:"RAF", type:"Transport", cost:3.0, start:2003, end:2025, status:"In Service"},
-    {name:"Boxer MIV", service:"Army", type:"Armoured Vehicle", cost:4.0, start:2019, end:2032, status:"Delivering"},
-    {name:"Tempest / GCAP", service:"RAF", type:"Future Combat Air", cost:12.0, start:2018, end:2040, status:"Development"},
-    {name:"AUKUS SSN (SSN-AUKUS)", service:"Royal Navy", type:"Submarine", cost:40.0, start:2023, end:2050, status:"Early Phase"},
-    {name:"Watchkeeper UAS", service:"Army", type:"ISR", cost:1.2, start:2005, end:2020, status:"In Service"},
-    {name:"Protector RG Mk1", service:"RAF", type:"RPAS", cost:1.6, start:2016, end:2025, status:"Delivering"},
-    {name:"Skynet 6", service:"Tri-Service", type:"Communications", cost:5.0, start:2020, end:2032, status:"In Progress"}
+    {name:"Trident (Vanguard class)", service:"Royal Navy", type:"Nuclear Deterrent", cost:12.5, start:1986, end:2001, status:"Complete", note:"4 Vanguard SSBNs. ~£23bn in 2024 prices"},
+    {name:"Dreadnought class SSBN", service:"Royal Navy", type:"Nuclear Deterrent", cost:31.0, start:2016, end:2035, status:"In Build", note:"4 boats. £41bn incl contingency. £17.4bn spent to Mar 2024"},
+    {name:"Eurofighter Typhoon", service:"RAF", type:"Fast Jet", cost:22.9, start:1988, end:2025, status:"In Service", note:"160 aircraft (cut from 232). Through-life ~£37bn (NAO 2011)"},
+    {name:"F-35B Lightning II", service:"RAF/RN", type:"Fast Jet", cost:18.8, start:2009, end:2048, status:"Delivering", note:"48 planned. Whole-life for 138: ~£71bn (NAO). 38 delivered"},
+    {name:"Queen Elizabeth Carriers", service:"Royal Navy", type:"Capital Ship", cost:6.2, start:2007, end:2020, status:"In Service", note:"2 carriers. Original budget £3.9bn"},
+    {name:"Type 45 Destroyer", service:"Royal Navy", type:"Escort", cost:7.5, start:1999, end:2013, status:"In Service", note:"6 ships (cut from 12). ~£1bn per unit"},
+    {name:"Type 26 Frigate", service:"Royal Navy", type:"Escort", cost:9.0, start:2017, end:2035, status:"In Build", note:"8 ASW frigates replacing Type 23"},
+    {name:"Type 31 Frigate", service:"Royal Navy", type:"Escort", cost:1.7, start:2019, end:2028, status:"In Build", note:"5 general-purpose frigates"},
+    {name:"Astute class SSN", service:"Royal Navy", type:"Submarine", cost:12.2, start:1997, end:2026, status:"Delivering", note:"7 boats. 5 commissioned. 53% over initial budget"},
+    {name:"SSN-AUKUS", service:"Royal Navy", type:"Submarine", cost:30.0, start:2023, end:2050, status:"Early Phase", note:"Up to 12 subs. RR reactor contract ~£9bn. Production from 2028"},
+    {name:"Ajax AFV", service:"Army", type:"Armoured Vehicle", cost:5.5, start:2010, end:2030, status:"Troubled", note:"~£3.5bn spent. 14 delivered. A decade late"},
+    {name:"Boxer MIV", service:"Army", type:"Armoured Vehicle", cost:4.0, start:2019, end:2032, status:"Delivering", note:"623 vehicles for Army mechanised infantry"},
+    {name:"Challenger 3", service:"Army", type:"MBT", cost:2.0, start:2021, end:2030, status:"In Progress", note:"148 tanks upgraded. Whole-life up from £1.3bn (2021)"},
+    {name:"Tempest / GCAP", service:"RAF", type:"Future Combat Air", cost:12.0, start:2018, end:2040, status:"Development", note:"6th-gen fighter. UK-Italy-Japan partnership"},
+    {name:"A400M Atlas", service:"RAF", type:"Transport", cost:3.0, start:2003, end:2025, status:"In Service", note:"22 aircraft. Multinational programme"},
+    {name:"Protector RG Mk1", service:"RAF", type:"RPAS", cost:1.6, start:2016, end:2025, status:"Delivering", note:"16 Protector drones replacing Reaper"},
+    {name:"Skynet 6", service:"Tri-Service", type:"Communications", cost:5.0, start:2020, end:2032, status:"In Progress", note:"Next-gen military satcoms"},
+    {name:"Watchkeeper UAS", service:"Army", type:"ISR", cost:1.2, start:2005, end:2020, status:"In Service", note:"54 tactical UAVs. Troubled programme"}
 ];
 
 // Events for annotation
@@ -1096,6 +1106,7 @@ function buildProgrammesTable() {
             <td>£${p.cost.toFixed(1)}bn</td>
             <td>${p.start} – ${p.end}</td>
             <td><span style="color:${statusColor};font-weight:600">${p.status}</span></td>
+            <td style="font-size:0.75rem;color:var(--text-dim)">${p.note || ''}</td>
             <td><div class="programme-bar" style="width:${(p.cost/maxCost*100).toFixed(0)}%;background:${statusColor}"></div></td>
         `;
         tbody.appendChild(row);

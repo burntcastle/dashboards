@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UK Defence Spending Dashboard (1985–2025)</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.1.0/dist/chartjs-plugin-annotation.min.js"></script>
+    <style>
+        :root {
+            --navy: #1B2A4A;
+            --navy-light: #2C3E6B;
+            --accent: #C8A951;
+            --accent-dim: #9A7D3A;
+            --bg: #0F1923;
+            --card: #162231;
+            --card-border: #1E3148;
+            --text: #E8E8E8;
+            --text-dim: #8899AA;
+            --personnel: #4E9AF5;
+            --equipment: #E8574A;
+            --infrastructure: #5BB88A;
+            --other: #B07CE8;
+            --ops: #F5A623;
+            --army: #8B0000;
+            --navy-color: #003078;
+            --raf: #5B92C8;
+            --civilian: #7B8D9E;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+            padding: 24px 32px;
+            border-bottom: 3px solid var(--accent);
+        }
+
+        .header h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .header .subtitle {
+            color: var(--accent);
+            font-size: 0.9rem;
+            margin-top: 4px;
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 32px;
+            background: var(--card);
+            border-bottom: 1px solid var(--card-border);
+            flex-wrap: wrap;
+        }
+
+        .controls label {
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .controls select, .controls input[type="range"] {
+            background: var(--navy);
+            color: var(--text);
+            border: 1px solid var(--card-border);
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        .range-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .range-group input[type="range"] {
+            width: 120px;
+            accent-color: var(--accent);
+        }
+
+        .range-group .range-val {
+            color: var(--accent);
+            font-weight: 600;
+            font-size: 0.85rem;
+            min-width: 70px;
+        }
+
+        .dashboard {
+            padding: 24px 32px;
+            display: grid;
+            gap: 20px;
+        }
+
+        .kpi-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+        }
+
+        .kpi {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 16px 20px;
+            text-align: center;
+        }
+
+        .kpi .value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .kpi .label {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 4px;
+        }
+
+        .kpi .change {
+            font-size: 0.8rem;
+            margin-top: 4px;
+        }
+
+        .change.up { color: #5BB88A; }
+        .change.down { color: #E8574A; }
+
+        .chart-container {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .chart-container h2 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .chart-container .chart-desc {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-bottom: 16px;
+        }
+
+        .chart-wrap {
+            position: relative;
+            width: 100%;
+        }
+
+        .chart-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .event-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid var(--card-border);
+        }
+
+        .event-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+
+        .event-legend-item .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .tab-bar {
+            display: flex;
+            gap: 2px;
+            margin-bottom: 16px;
+        }
+
+        .tab-bar button {
+            background: var(--navy);
+            color: var(--text-dim);
+            border: 1px solid var(--card-border);
+            padding: 8px 16px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            border-radius: 4px 4px 0 0;
+            transition: all 0.2s;
+        }
+
+        .tab-bar button.active {
+            background: var(--accent);
+            color: var(--navy);
+            font-weight: 600;
+            border-color: var(--accent);
+        }
+
+        .tab-bar button:hover:not(.active) {
+            background: var(--navy-light);
+            color: var(--text);
+        }
+
+        .programmes-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+
+        .programmes-table th {
+            text-align: left;
+            color: var(--accent);
+            font-weight: 600;
+            padding: 8px 12px;
+            border-bottom: 2px solid var(--card-border);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .programmes-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--card-border);
+            color: var(--text);
+        }
+
+        .programmes-table tr:hover td {
+            background: rgba(200, 169, 81, 0.05);
+        }
+
+        .programme-bar {
+            height: 6px;
+            background: var(--accent);
+            border-radius: 3px;
+            opacity: 0.7;
+        }
+
+        .sources {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .sources h2 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .sources ul {
+            list-style: none;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 8px;
+        }
+
+        .sources li {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        .sources a {
+            color: var(--personnel);
+            text-decoration: none;
+        }
+
+        .sources a:hover {
+            text-decoration: underline;
+        }
+
+        .methodology {
+            font-size: 0.78rem;
+            color: var(--text-dim);
+            padding: 16px 20px;
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            line-height: 1.6;
+        }
+
+        .methodology h3 {
+            color: var(--text);
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+        }
+
+        canvas {
+            max-height: 400px;
+        }
+
+        .toggle-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .toggle-btn {
+            background: var(--navy);
+            color: var(--text-dim);
+            border: 1px solid var(--card-border);
+            padding: 4px 12px;
+            font-size: 0.78rem;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .toggle-btn.active {
+            background: var(--accent-dim);
+            color: #FFF;
+            border-color: var(--accent);
+        }
+
+        @media (max-width: 900px) {
+            .chart-row { grid-template-columns: 1fr; }
+            .controls { padding: 12px 16px; }
+            .dashboard { padding: 16px; }
+            .header { padding: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>UK Defence Spending &amp; Structure Dashboard</h1>
+    <div class="subtitle">Inflation-adjusted analysis 1985/86 – 2024/25 &middot; All figures in 2023/24 prices unless stated</div>
+</div>
+
+<div class="controls">
+    <div>
+        <label>Year Range</label>
+        <div class="range-group">
+            <input type="range" id="yearStart" min="1985" max="2024" value="1985">
+            <span class="range-val" id="yearStartVal">1985/86</span>
+            <span style="color:var(--text-dim)">—</span>
+            <input type="range" id="yearEnd" min="1985" max="2024" value="2024">
+            <span class="range-val" id="yearEndVal">2024/25</span>
+        </div>
+    </div>
+    <div>
+        <label>Price Basis</label>
+        <div class="toggle-group">
+            <button class="toggle-btn active" onclick="setPriceBasis('real')" id="btnReal">Real (2023/24)</button>
+            <button class="toggle-btn" onclick="setPriceBasis('nominal')" id="btnNominal">Nominal</button>
+        </div>
+    </div>
+    <div>
+        <label>Show Events</label>
+        <div class="toggle-group">
+            <button class="toggle-btn active" onclick="toggleEvents()" id="btnEvents">Operations &amp; Reviews</button>
+        </div>
+    </div>
+</div>
+
+<div class="dashboard">
+    <!-- KPI row -->
+    <div class="kpi-row" id="kpiRow">
+        <div class="kpi">
+            <div class="value" id="kpiTotal">—</div>
+            <div class="label">Total Defence Budget</div>
+            <div class="change" id="kpiTotalChange"></div>
+        </div>
+        <div class="kpi">
+            <div class="value" id="kpiGDP">—</div>
+            <div class="label">% of GDP</div>
+            <div class="change" id="kpiGDPChange"></div>
+        </div>
+        <div class="kpi">
+            <div class="value" id="kpiPersonnel">—</div>
+            <div class="label">Personnel Share</div>
+            <div class="change" id="kpiPersonnelChange"></div>
+        </div>
+        <div class="kpi">
+            <div class="value" id="kpiEquipment">—</div>
+            <div class="label">Equipment Share</div>
+            <div class="change" id="kpiEquipmentChange"></div>
+        </div>
+        <div class="kpi">
+            <div class="value" id="kpiStrength">—</div>
+            <div class="label">Armed Forces Strength</div>
+            <div class="change" id="kpiStrengthChange"></div>
+        </div>
+        <div class="kpi">
+            <div class="value" id="kpiPerHead">—</div>
+            <div class="label">Spend per Serviceperson</div>
+            <div class="change" id="kpiPerHeadChange"></div>
+        </div>
+    </div>
+
+    <!-- Main spending chart -->
+    <div class="chart-container">
+        <h2>Defence Expenditure by Category</h2>
+        <p class="chart-desc">Core MOD budget broken down by major spending category, plus net additional cost of operations (NACMO) funded from Treasury Reserve</p>
+        <div class="tab-bar">
+            <button class="active" onclick="setMainChart('stacked')" id="tabStacked">Stacked Area</button>
+            <button onclick="setMainChart('line')" id="tabLine">Line</button>
+            <button onclick="setMainChart('pct')" id="tabPct">% Composition</button>
+        </div>
+        <div class="chart-wrap">
+            <canvas id="mainChart"></canvas>
+        </div>
+        <div class="event-legend" id="eventLegend"></div>
+    </div>
+
+    <!-- GDP % and workforce charts side by side -->
+    <div class="chart-row">
+        <div class="chart-container">
+            <h2>Defence Spending as % of GDP</h2>
+            <p class="chart-desc">Including and excluding net additional costs of military operations</p>
+            <div class="chart-wrap">
+                <canvas id="gdpChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-container">
+            <h2>Armed Forces &amp; Civilian Strength</h2>
+            <p class="chart-desc">Regular forces by service plus MOD civilian workforce</p>
+            <div class="chart-wrap">
+                <canvas id="workforceChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Spend per head and equipment plan -->
+    <div class="chart-row">
+        <div class="chart-container">
+            <h2>Spend per Regular Serviceperson</h2>
+            <p class="chart-desc">Total defence budget divided by regular forces strength (2023/24 prices)</p>
+            <div class="chart-wrap">
+                <canvas id="perHeadChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-container">
+            <h2>Equipment vs Personnel Spending</h2>
+            <p class="chart-desc">Relative share of the two largest budget categories over time</p>
+            <div class="chart-wrap">
+                <canvas id="ratioChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Major Programmes -->
+    <div class="chart-container">
+        <h2>Major Defence Programmes</h2>
+        <p class="chart-desc">Selected major equipment and capability programmes with approximate total costs and timelines</p>
+        <div style="overflow-x:auto">
+            <table class="programmes-table">
+                <thead>
+                    <tr>
+                        <th>Programme</th>
+                        <th>Service</th>
+                        <th>Type</th>
+                        <th>Approx. Cost (£bn, outturn)</th>
+                        <th>Timeline</th>
+                        <th>Status</th>
+                        <th style="width:120px">Relative Cost</th>
+                    </tr>
+                </thead>
+                <tbody id="programmesBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Sources -->
+    <div class="sources">
+        <h2>Data Sources &amp; References</h2>
+        <ul>
+            <li><a href="https://www.gov.uk/government/collections/defence-departmental-resources" target="_blank">MOD Departmental Resources (Annual Reports &amp; Accounts)</a></li>
+            <li><a href="https://www.gov.uk/government/collections/uk-defence-statistics-compendium" target="_blank">UK Defence Statistics Compendium (DASA/Defence Statistics)</a></li>
+            <li><a href="https://www.gov.uk/government/statistics/defence-expenditure-tables" target="_blank">MOD Defence Expenditure Tables (UKDS Chapter 1)</a></li>
+            <li><a href="https://www.sipri.org/databases/milex" target="_blank">SIPRI Military Expenditure Database</a></li>
+            <li><a href="https://www.nato.int/cps/en/natohq/topics_49198.htm" target="_blank">NATO Defence Expenditure Data</a></li>
+            <li><a href="https://www.gov.uk/government/statistics/gdp-deflators-at-market-prices-and-money-gdp" target="_blank">HM Treasury GDP Deflators</a></li>
+            <li><a href="https://www.gov.uk/government/statistics/quarterly-service-personnel-statistics" target="_blank">MOD Quarterly Service Personnel Statistics</a></li>
+            <li><a href="https://www.gov.uk/government/publications/the-defence-equipment-plan" target="_blank">Defence Equipment Plan / Annual Statement on Equipment Plan</a></li>
+            <li><a href="https://researchbriefings.files.parliament.uk/documents/CBP-8175/CBP-8175.pdf" target="_blank">House of Commons Library – UK Defence Expenditure (CBP-8175)</a></li>
+            <li><a href="https://www.nao.org.uk/reports/?search=defence+equipment+plan" target="_blank">NAO Reports on the Equipment Plan</a></li>
+            <li><a href="https://www.gov.uk/government/publications/integrated-review-refresh-2023-responding-to-a-more-contested-and-volatile-world" target="_blank">Integrated Review Refresh 2023</a></li>
+            <li><a href="https://www.gov.uk/government/publications/strategic-defence-review-2025" target="_blank">Strategic Defence Review 2025</a></li>
+        </ul>
+    </div>
+
+    <!-- Methodology -->
+    <div class="methodology">
+        <h3>Methodology &amp; Notes</h3>
+        <p>
+            <strong>Deflation:</strong> All real-terms figures are expressed in 2023/24 prices using the HM Treasury GDP deflator series.
+            Financial years run April–March (e.g. "1985" = FY 1985/86).<br>
+            <strong>Category definitions:</strong> "Personnel" includes military and civilian pay, pensions, and allowances.
+            "Equipment &amp; Support" covers procurement, equipment support, and research &amp; development.
+            "Infrastructure &amp; Admin" includes estate, IT, and administrative costs.
+            "Other" captures miscellaneous costs and war pensions.<br>
+            <strong>Operations:</strong> Net Additional Costs of Military Operations (NACMO) are funded from the Treasury Reserve,
+            outside the core defence budget. These are shown separately. Data before FY 2001/02 is estimated.<br>
+            <strong>Personnel strength:</strong> Regular forces (trained and untrained). Reserve and volunteer forces are excluded.
+            Civilian figures include trading funds (e.g. DSTL, DECA) where available.<br>
+            <strong>Data quality:</strong> Category breakdowns for earlier years (pre-1990) use broader NATO-consistent categories
+            and may not align exactly with later MOD accounting classifications. Figures are compiled from multiple official sources
+            and may show minor discrepancies with any single publication due to rounding and definitional changes over the period.
+        </p>
+    </div>
+</div>
+
+<script>
+// ============================================
+// EMBEDDED DATA
+// ============================================
+
+// UK Defence spending data - Financial years (e.g. 1985 = 1985/86)
+// Sources: MOD Defence Expenditure Tables, UKDS, HoC Library CBP-8175, SIPRI, NATO
+// All nominal figures in £ billion
+
+const DATA = {
+    years: [1985,1986,1987,1988,1989,1990,1991,1992,1993,1994,1995,1996,1997,1998,1999,2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024],
+
+    // HM Treasury GDP deflators (2023/24 = 100)
+    // Source: HM Treasury GDP Deflators March 2025, rebased to 2023/24
+    deflator: [28.0,29.1,30.5,32.2,34.1,36.2,38.3,40.1,41.6,42.5,43.8,45.4,46.8,48.1,49.3,50.3,51.5,53.0,54.6,56.3,58.0,59.9,62.0,64.2,65.4,67.2,68.7,69.8,71.0,72.4,73.5,75.1,76.9,78.6,80.5,82.4,85.2,90.5,96.4,100.0],
+
+    // Core MOD DEL (Departmental Expenditure Limit) in nominal £bn
+    // Source: MOD Annual Reports, PESA, UKDS Table 1.2
+    totalNominal: [17.9,18.2,18.8,19.2,20.3,22.3,24.0,23.6,23.5,22.7,21.4,21.5,21.2,22.3,22.6,23.6,24.3,25.6,26.8,27.0,28.4,29.6,32.0,33.4,36.9,37.4,36.0,34.4,34.0,34.6,35.1,35.3,36.4,37.3,38.5,41.5,42.4,46.0,52.5,55.6],
+
+    // Category breakdowns - nominal £bn
+    // Personnel (military pay, civilian pay, pensions, allowances)
+    personnelNominal: [7.5,7.7,7.9,8.1,8.6,9.5,10.3,10.2,10.2,9.7,9.0,9.1,9.0,9.3,9.4,9.7,10.0,10.4,10.8,10.9,11.3,11.6,12.4,12.8,13.8,13.9,13.2,12.5,12.3,12.4,12.5,12.4,12.7,13.0,13.5,14.6,14.9,16.1,17.8,18.9],
+
+    // Equipment, support & R&D
+    equipmentNominal: [6.5,6.6,6.9,7.1,7.5,8.1,8.5,8.3,8.2,8.0,7.7,7.7,7.5,8.1,8.3,8.8,9.1,9.8,10.2,10.4,11.1,11.8,12.8,13.6,15.3,15.5,14.9,14.3,14.2,14.6,14.9,15.4,16.1,16.5,17.0,18.5,19.0,20.8,24.0,25.5],
+
+    // Infrastructure, estates, IT, admin
+    infrastructureNominal: [2.3,2.3,2.4,2.4,2.5,2.8,3.1,3.0,3.0,2.9,2.7,2.7,2.7,2.8,2.8,2.9,3.0,3.1,3.3,3.2,3.4,3.5,3.8,3.8,4.2,4.3,4.2,4.0,3.9,3.9,3.9,3.8,3.8,3.9,4.0,4.2,4.2,4.5,5.1,5.3],
+
+    // Other (war pensions, miscellaneous, adjustments)
+    otherNominal: [1.6,1.6,1.6,1.6,1.7,1.9,2.1,2.1,2.1,2.1,2.0,2.0,2.0,2.1,2.1,2.2,2.2,2.3,2.5,2.5,2.6,2.7,3.0,3.2,3.6,3.7,3.7,3.6,3.6,3.7,3.8,3.7,3.8,3.9,4.0,4.2,4.3,4.6,5.6,5.9],
+
+    // Net Additional Cost of Military Operations (NACMO) - funded from Treasury Reserve
+    // Source: MOD Annual Reports, HoC Library
+    // Pre-2001 figures are estimated (Northern Ireland, Bosnia/Kosovo costs)
+    nacmoNominal: [0.1,0.1,0.1,0.1,0.1,0.2,1.8,0.4,0.3,0.2,0.3,0.3,0.2,0.2,0.5,0.2,0.3,0.9,1.4,1.2,1.1,1.3,1.5,2.6,3.3,3.8,3.6,2.5,0.9,0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.4,0.4,0.5],
+
+    // Defence as % of GDP (core budget, excluding NACMO)
+    // Source: NATO, SIPRI, HoC Library
+    gdpPct: [5.1,4.9,4.6,4.3,4.1,4.0,3.9,3.7,3.5,3.3,3.0,2.9,2.7,2.6,2.5,2.5,2.4,2.4,2.4,2.3,2.3,2.3,2.3,2.4,2.6,2.6,2.5,2.3,2.2,2.1,2.1,2.1,2.1,2.1,2.1,2.3,2.2,2.2,2.3,2.3],
+
+    // Including NACMO
+    gdpPctIncOps: [5.2,5.0,4.7,4.4,4.2,4.1,4.3,3.8,3.6,3.4,3.1,3.0,2.7,2.6,2.5,2.5,2.5,2.5,2.6,2.5,2.4,2.5,2.6,2.7,2.9,2.8,2.7,2.4,2.3,2.2,2.1,2.1,2.1,2.1,2.1,2.3,2.2,2.2,2.3,2.3],
+
+    // Armed Forces regular strength (thousands)
+    // Source: UKDS, MOD Quarterly Service Personnel Statistics
+    army: [163,161,159,157,156,153,148,141,134,119,112,110,110,110,110,110,110,110,112,112,109,108,107,106,106,102,100,98,94,90,87,82,82,81,80,79,79,79,79,76],
+    navy: [70,69,67,66,65,64,63,60,57,54,49,48,47,46,44,43,42,41,41,40,39,39,38,38,38,36,35,34,33,33,33,32,32,33,33,33,33,33,33,33],
+    raf: [93,92,90,89,89,88,85,82,78,73,65,60,57,55,55,54,53,53,53,51,49,48,46,43,42,40,39,38,35,34,33,33,33,33,33,33,33,33,32,32],
+    civilian: [195,190,185,178,170,165,155,142,131,120,115,113,108,105,101,97,95,96,97,99,97,94,88,85,83,80,73,68,63,59,57,56,57,58,59,60,61,62,63,63],
+
+    // Reserve forces (thousands) - trained strength
+    reserves: [320,310,300,290,285,280,275,265,255,245,235,225,215,205,195,195,190,188,186,185,183,180,175,170,165,160,155,142,130,123,120,127,130,133,136,137,140,142,145,148]
+};
+
+// Major programmes data
+const PROGRAMMES = [
+    {name:"Trident (Vanguard class)", service:"Royal Navy", type:"Nuclear Deterrent", cost:14.9, start:1986, end:2001, status:"Complete"},
+    {name:"Dreadnought class SSBN", service:"Royal Navy", type:"Nuclear Deterrent", cost:31.0, start:2016, end:2035, status:"In Build"},
+    {name:"Eurofighter Typhoon", service:"RAF", type:"Fast Jet", cost:22.0, start:1988, end:2025, status:"In Service"},
+    {name:"F-35B Lightning II", service:"RAF/RN", type:"Fast Jet", cost:13.5, start:2009, end:2035, status:"Delivering"},
+    {name:"Queen Elizabeth Carriers", service:"Royal Navy", type:"Capital Ship", cost:7.6, start:2007, end:2020, status:"In Service"},
+    {name:"Type 45 Destroyer", service:"Royal Navy", type:"Escort", cost:7.5, start:1999, end:2013, status:"In Service"},
+    {name:"Type 26 Frigate", service:"Royal Navy", type:"Escort", cost:9.0, start:2017, end:2035, status:"In Build"},
+    {name:"Type 31 Frigate", service:"Royal Navy", type:"Escort", cost:1.7, start:2019, end:2028, status:"In Build"},
+    {name:"Astute class SSN", service:"Royal Navy", type:"Submarine", cost:11.0, start:1997, end:2026, status:"Delivering"},
+    {name:"Ajax AFV", service:"Army", type:"Armoured Vehicle", cost:5.5, start:2010, end:2030, status:"Troubled"},
+    {name:"Challenger 2 LEP / CR3", service:"Army", type:"MBT", cost:1.3, start:2018, end:2030, status:"In Progress"},
+    {name:"A400M Atlas", service:"RAF", type:"Transport", cost:3.0, start:2003, end:2025, status:"In Service"},
+    {name:"Boxer MIV", service:"Army", type:"Armoured Vehicle", cost:4.0, start:2019, end:2032, status:"Delivering"},
+    {name:"Tempest / GCAP", service:"RAF", type:"Future Combat Air", cost:12.0, start:2018, end:2040, status:"Development"},
+    {name:"AUKUS SSN (SSN-AUKUS)", service:"Royal Navy", type:"Submarine", cost:40.0, start:2023, end:2050, status:"Early Phase"},
+    {name:"Watchkeeper UAS", service:"Army", type:"ISR", cost:1.2, start:2005, end:2020, status:"In Service"},
+    {name:"Protector RG Mk1", service:"RAF", type:"RPAS", cost:1.6, start:2016, end:2025, status:"Delivering"},
+    {name:"Skynet 6", service:"Tri-Service", type:"Communications", cost:5.0, start:2020, end:2032, status:"In Progress"}
+];
+
+// Events for annotation
+const EVENTS = [
+    {year:1990, label:"Options for Change", type:"review", color:"#7BC8F6"},
+    {year:1990.5, label:"Gulf War", type:"operation", color:"#F5A623"},
+    {year:1994, label:"Front Line First", type:"review", color:"#7BC8F6"},
+    {year:1995, label:"Bosnia (IFOR)", type:"operation", color:"#F5A623"},
+    {year:1998, label:"SDR 1998", type:"review", color:"#7BC8F6"},
+    {year:1999, label:"Kosovo", type:"operation", color:"#F5A623"},
+    {year:2000, label:"Sierra Leone", type:"operation", color:"#F5A623"},
+    {year:2001, label:"Afghanistan begins", type:"operation", color:"#E8574A"},
+    {year:2002, label:"SDR New Chapter", type:"review", color:"#7BC8F6"},
+    {year:2003, label:"Iraq War begins", type:"operation", color:"#E8574A"},
+    {year:2005, label:"Defence Industrial Strategy", type:"review", color:"#7BC8F6"},
+    {year:2009, label:"Iraq withdrawal", type:"operation", color:"#F5A623"},
+    {year:2010, label:"SDSR 2010", type:"review", color:"#7BC8F6"},
+    {year:2011, label:"Libya (Op Ellamy)", type:"operation", color:"#F5A623"},
+    {year:2014, label:"Afghanistan ends (combat)", type:"operation", color:"#F5A623"},
+    {year:2014.3, label:"Anti-ISIS (Op Shader)", type:"operation", color:"#F5A623"},
+    {year:2015, label:"SDSR 2015", type:"review", color:"#7BC8F6"},
+    {year:2021, label:"Integrated Review", type:"review", color:"#7BC8F6"},
+    {year:2022, label:"Ukraine support begins", type:"operation", color:"#E8574A"},
+    {year:2023, label:"IR Refresh 2023", type:"review", color:"#7BC8F6"},
+    {year:2025, label:"SDR 2025", type:"review", color:"#7BC8F6"}
+];
+
+// ============================================
+// CHART CONFIGURATION
+// ============================================
+
+let priceBasis = 'real';
+let showEvents = true;
+let mainChartMode = 'stacked';
+let yearRange = [1985, 2024];
+
+let mainChart, gdpChart, workforceChart, perHeadChart, ratioChart;
+
+function deflate(nominalArray) {
+    return nominalArray.map((v, i) => priceBasis === 'real' ? +(v / DATA.deflator[i] * 100).toFixed(2) : v);
+}
+
+function getRange() {
+    const s = DATA.years.indexOf(yearRange[0]);
+    const e = DATA.years.indexOf(yearRange[1]);
+    return [Math.max(0, s), Math.min(DATA.years.length - 1, e)];
+}
+
+function sliceData(arr) {
+    const [s, e] = getRange();
+    return arr.slice(s, e + 1);
+}
+
+function fyLabel(y) { return y + '/' + String(y + 1).slice(-2); }
+
+function getLabels() { return sliceData(DATA.years).map(fyLabel); }
+
+function getEventAnnotations() {
+    if (!showEvents) return {};
+    const [s, e] = getRange();
+    const annotations = {};
+    EVENTS.forEach((ev, i) => {
+        const yr = Math.floor(ev.year);
+        if (yr >= DATA.years[s] && yr <= DATA.years[e]) {
+            const idx = yr - DATA.years[s];
+            annotations['event_' + i] = {
+                type: 'line',
+                xMin: idx,
+                xMax: idx,
+                borderColor: ev.color + '55',
+                borderWidth: 1.5,
+                borderDash: ev.type === 'review' ? [6, 3] : [2, 2],
+                label: {
+                    display: true,
+                    content: ev.label,
+                    position: 'start',
+                    backgroundColor: ev.color + 'CC',
+                    color: '#FFF',
+                    font: { size: 9, weight: 'bold' },
+                    padding: { top: 2, bottom: 2, left: 4, right: 4 },
+                    borderRadius: 2,
+                    rotation: -90,
+                    yAdjust: -10
+                }
+            };
+        }
+    });
+    return annotations;
+}
+
+function buildMainChart() {
+    const ctx = document.getElementById('mainChart').getContext('2d');
+    if (mainChart) mainChart.destroy();
+
+    const labels = getLabels();
+    const personnel = deflate(sliceData(DATA.personnelNominal));
+    const equipment = deflate(sliceData(DATA.equipmentNominal));
+    const infrastructure = deflate(sliceData(DATA.infrastructureNominal));
+    const other = deflate(sliceData(DATA.otherNominal));
+    const nacmo = deflate(sliceData(DATA.nacmoNominal));
+
+    const priceLabel = priceBasis === 'real' ? '2023/24 prices' : 'nominal';
+
+    if (mainChartMode === 'pct') {
+        // Percentage composition
+        const totals = personnel.map((v, i) => v + equipment[i] + infrastructure[i] + other[i]);
+        mainChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [
+                    {label:'Personnel', data: personnel.map((v,i) => (v/totals[i]*100).toFixed(1)), backgroundColor: 'rgba(78,154,245,0.85)', stack:'s'},
+                    {label:'Equipment & Support', data: equipment.map((v,i) => (v/totals[i]*100).toFixed(1)), backgroundColor: 'rgba(232,87,74,0.85)', stack:'s'},
+                    {label:'Infrastructure & Admin', data: infrastructure.map((v,i) => (v/totals[i]*100).toFixed(1)), backgroundColor: 'rgba(91,184,138,0.85)', stack:'s'},
+                    {label:'Other', data: other.map((v,i) => (v/totals[i]*100).toFixed(1)), backgroundColor: 'rgba(176,124,232,0.85)', stack:'s'}
+                ]
+            },
+            options: {
+                responsive: true,
+                interaction: { mode: 'index', intersect: false },
+                scales: {
+                    x: { ticks: { color: '#8899AA', maxRotation: 45, font: {size: 10} }, grid: { color: '#1E3148' }},
+                    y: { stacked: true, max: 100, ticks: { color: '#8899AA', callback: v => v + '%' }, grid: { color: '#1E3148' }, title: { display: true, text: '% of core budget', color: '#8899AA' }}
+                },
+                plugins: {
+                    legend: { labels: { color: '#E8E8E8', boxWidth: 12, font: {size: 11} }},
+                    annotation: { annotations: getEventAnnotations() },
+                    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y + '%' }}
+                }
+            }
+        });
+    } else {
+        const isStacked = mainChartMode === 'stacked';
+        mainChart = new Chart(ctx, {
+            type: isStacked ? 'bar' : 'line',
+            data: {
+                labels,
+                datasets: [
+                    {
+                        label: 'Personnel',
+                        data: personnel,
+                        backgroundColor: 'rgba(78,154,245,0.75)',
+                        borderColor: '#4E9AF5',
+                        borderWidth: isStacked ? 0 : 2,
+                        fill: isStacked,
+                        stack: isStacked ? 's' : undefined,
+                        tension: 0.3,
+                        pointRadius: isStacked ? 0 : 2
+                    },
+                    {
+                        label: 'Equipment & Support',
+                        data: equipment,
+                        backgroundColor: 'rgba(232,87,74,0.75)',
+                        borderColor: '#E8574A',
+                        borderWidth: isStacked ? 0 : 2,
+                        fill: isStacked,
+                        stack: isStacked ? 's' : undefined,
+                        tension: 0.3,
+                        pointRadius: isStacked ? 0 : 2
+                    },
+                    {
+                        label: 'Infrastructure & Admin',
+                        data: infrastructure,
+                        backgroundColor: 'rgba(91,184,138,0.75)',
+                        borderColor: '#5BB88A',
+                        borderWidth: isStacked ? 0 : 2,
+                        fill: isStacked,
+                        stack: isStacked ? 's' : undefined,
+                        tension: 0.3,
+                        pointRadius: isStacked ? 0 : 2
+                    },
+                    {
+                        label: 'Other',
+                        data: other,
+                        backgroundColor: 'rgba(176,124,232,0.75)',
+                        borderColor: '#B07CE8',
+                        borderWidth: isStacked ? 0 : 2,
+                        fill: isStacked,
+                        stack: isStacked ? 's' : undefined,
+                        tension: 0.3,
+                        pointRadius: isStacked ? 0 : 2
+                    },
+                    {
+                        label: 'Operations (NACMO)',
+                        data: nacmo,
+                        backgroundColor: 'rgba(245,166,35,0.75)',
+                        borderColor: '#F5A623',
+                        borderWidth: isStacked ? 0 : 2,
+                        fill: isStacked,
+                        stack: isStacked ? 's' : undefined,
+                        tension: 0.3,
+                        pointRadius: isStacked ? 0 : 2,
+                        borderDash: isStacked ? undefined : [5, 3]
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                interaction: { mode: 'index', intersect: false },
+                scales: {
+                    x: { ticks: { color: '#8899AA', maxRotation: 45, font: {size: 10} }, grid: { color: '#1E3148' }},
+                    y: {
+                        stacked: isStacked,
+                        ticks: { color: '#8899AA', callback: v => '£' + v + 'bn' },
+                        grid: { color: '#1E3148' },
+                        title: { display: true, text: '£ billion (' + priceLabel + ')', color: '#8899AA' }
+                    }
+                },
+                plugins: {
+                    legend: { labels: { color: '#E8E8E8', boxWidth: 12, font: {size: 11} }},
+                    annotation: { annotations: getEventAnnotations() },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => ctx.dataset.label + ': £' + ctx.parsed.y.toFixed(1) + 'bn',
+                            footer: items => {
+                                const total = items.reduce((s, i) => s + i.parsed.y, 0);
+                                return 'Total: £' + total.toFixed(1) + 'bn';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
+function buildGDPChart() {
+    const ctx = document.getElementById('gdpChart').getContext('2d');
+    if (gdpChart) gdpChart.destroy();
+
+    const labels = getLabels();
+    const core = sliceData(DATA.gdpPct);
+    const incOps = sliceData(DATA.gdpPctIncOps);
+
+    gdpChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: 'Core Defence Budget',
+                    data: core,
+                    borderColor: '#4E9AF5',
+                    backgroundColor: 'rgba(78,154,245,0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 2,
+                    borderWidth: 2
+                },
+                {
+                    label: 'Including Operations',
+                    data: incOps,
+                    borderColor: '#F5A623',
+                    backgroundColor: 'rgba(245,166,35,0.05)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 2,
+                    borderWidth: 2,
+                    borderDash: [5, 3]
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            interaction: { mode: 'index', intersect: false },
+            scales: {
+                x: { ticks: { color: '#8899AA', maxRotation: 45, font: {size: 9} }, grid: { color: '#1E3148' }},
+                y: {
+                    ticks: { color: '#8899AA', callback: v => v + '%' },
+                    grid: { color: '#1E3148' },
+                    title: { display: true, text: '% of GDP', color: '#8899AA' }
+                }
+            },
+            plugins: {
+                legend: { labels: { color: '#E8E8E8', boxWidth: 12, font: {size: 10} }},
+                annotation: {
+                    annotations: {
+                        nato2: {
+                            type: 'line',
+                            yMin: 2.0, yMax: 2.0,
+                            borderColor: '#E8574A88',
+                            borderWidth: 2,
+                            borderDash: [8, 4],
+                            label: {
+                                display: true,
+                                content: 'NATO 2% guideline',
+                                position: 'end',
+                                backgroundColor: '#E8574A',
+                                color: '#FFF',
+                                font: { size: 9 },
+                                padding: 3,
+                                borderRadius: 2
+                            }
+                        },
+                        nato25: {
+                            type: 'line',
+                            yMin: 2.5, yMax: 2.5,
+                            borderColor: '#F5A62366',
+                            borderWidth: 1.5,
+                            borderDash: [4, 4],
+                            label: {
+                                display: true,
+                                content: 'NATO 2.5% target (2025)',
+                                position: 'start',
+                                backgroundColor: '#F5A623',
+                                color: '#FFF',
+                                font: { size: 9 },
+                                padding: 3,
+                                borderRadius: 2
+                            }
+                        },
+                        ...getEventAnnotations()
+                    }
+                },
+                tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(1) + '%' }}
+            }
+        }
+    });
+}
+
+function buildWorkforceChart() {
+    const ctx = document.getElementById('workforceChart').getContext('2d');
+    if (workforceChart) workforceChart.destroy();
+
+    const labels = getLabels();
+
+    workforceChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [
+                {label:'Army', data: sliceData(DATA.army), backgroundColor:'rgba(139,0,0,0.8)', stack:'s'},
+                {label:'Royal Navy / RM', data: sliceData(DATA.navy), backgroundColor:'rgba(0,48,120,0.8)', stack:'s'},
+                {label:'RAF', data: sliceData(DATA.raf), backgroundColor:'rgba(91,146,200,0.8)', stack:'s'},
+                {label:'MOD Civilians', data: sliceData(DATA.civilian), backgroundColor:'rgba(123,141,158,0.5)', stack:'c', type:'line', borderColor:'#7B8D9E', borderWidth:2, pointRadius:1, tension:0.3, fill:false, yAxisID:'y1'}
+            ]
+        },
+        options: {
+            responsive: true,
+            interaction: { mode: 'index', intersect: false },
+            scales: {
+                x: { ticks: { color: '#8899AA', maxRotation: 45, font: {size: 9} }, grid: { color: '#1E3148' }},
+                y: {
+                    stacked: true,
+                    ticks: { color: '#8899AA', callback: v => v + 'k' },
+                    grid: { color: '#1E3148' },
+                    title: { display: true, text: 'Regular Forces (thousands)', color: '#8899AA' }
+                },
+                y1: {
+                    position: 'right',
+                    ticks: { color: '#7B8D9E', callback: v => v + 'k' },
+                    grid: { display: false },
+                    title: { display: true, text: 'Civilians (thousands)', color: '#7B8D9E' }
+                }
+            },
+            plugins: {
+                legend: { labels: { color: '#E8E8E8', boxWidth: 12, font: {size: 10} }},
+                annotation: { annotations: getEventAnnotations() },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y + ',000',
+                        footer: items => {
+                            const mil = items.filter(i => i.datasetIndex < 3).reduce((s, i) => s + i.parsed.y, 0);
+                            return 'Total Regular Forces: ' + mil + ',000';
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function buildPerHeadChart() {
+    const ctx = document.getElementById('perHeadChart').getContext('2d');
+    if (perHeadChart) perHeadChart.destroy();
+
+    const labels = getLabels();
+    const totalReal = deflate(sliceData(DATA.totalNominal));
+    const strength = sliceData(DATA.army).map((a, i) => a + sliceData(DATA.navy)[i] + sliceData(DATA.raf)[i]);
+    const perHead = totalReal.map((t, i) => +((t * 1e9 / (strength[i] * 1000)) / 1000).toFixed(0));
+
+    perHeadChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Spend per Serviceperson (£k)',
+                data: perHead,
+                borderColor: '#C8A951',
+                backgroundColor: 'rgba(200,169,81,0.1)',
+                fill: true,
+                tension: 0.3,
+                pointRadius: 2,
+                borderWidth: 2.5
+            }]
+        },
+        options: {
+            responsive: true,
+            interaction: { mode: 'index', intersect: false },
+            scales: {
+                x: { ticks: { color: '#8899AA', maxRotation: 45, font: {size: 9} }, grid: { color: '#1E3148' }},
+                y: {
+                    ticks: { color: '#8899AA', callback: v => '£' + v + 'k' },
+                    grid: { color: '#1E3148' },
+                    title: { display: true, text: '£ thousands (2023/24 prices)', color: '#8899AA' }
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                annotation: { annotations: getEventAnnotations() },
+                tooltip: { callbacks: { label: ctx => '£' + ctx.parsed.y.toLocaleString() + 'k per serviceperson' }}
+            }
+        }
+    });
+}
+
+function buildRatioChart() {
+    const ctx = document.getElementById('ratioChart').getContext('2d');
+    if (ratioChart) ratioChart.destroy();
+
+    const labels = getLabels();
+    const totalR = deflate(sliceData(DATA.totalNominal));
+    const persR = deflate(sliceData(DATA.personnelNominal));
+    const equipR = deflate(sliceData(DATA.equipmentNominal));
+    const persPct = persR.map((v, i) => +(v / totalR[i] * 100).toFixed(1));
+    const equipPct = equipR.map((v, i) => +(v / totalR[i] * 100).toFixed(1));
+
+    ratioChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: 'Personnel %',
+                    data: persPct,
+                    borderColor: '#4E9AF5',
+                    backgroundColor: 'rgba(78,154,245,0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 2,
+                    borderWidth: 2
+                },
+                {
+                    label: 'Equipment & Support %',
+                    data: equipPct,
+                    borderColor: '#E8574A',
+                    backgroundColor: 'rgba(232,87,74,0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 2,
+                    borderWidth: 2
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            interaction: { mode: 'index', intersect: false },
+            scales: {
+                x: { ticks: { color: '#8899AA', maxRotation: 45, font: {size: 9} }, grid: { color: '#1E3148' }},
+                y: {
+                    ticks: { color: '#8899AA', callback: v => v + '%' },
+                    grid: { color: '#1E3148' },
+                    title: { display: true, text: '% of core defence budget', color: '#8899AA' }
+                }
+            },
+            plugins: {
+                legend: { labels: { color: '#E8E8E8', boxWidth: 12, font: {size: 10} }},
+                annotation: { annotations: getEventAnnotations() },
+                tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y + '%' }}
+            }
+        }
+    });
+}
+
+function buildProgrammesTable() {
+    const maxCost = Math.max(...PROGRAMMES.map(p => p.cost));
+    const tbody = document.getElementById('programmesBody');
+    tbody.innerHTML = '';
+    PROGRAMMES.sort((a, b) => b.cost - a.cost).forEach(p => {
+        const statusColor = {
+            'Complete': '#5BB88A',
+            'In Service': '#4E9AF5',
+            'In Build': '#C8A951',
+            'Delivering': '#7BC8F6',
+            'In Progress': '#B07CE8',
+            'Development': '#B07CE8',
+            'Early Phase': '#7B8D9E',
+            'Troubled': '#E8574A'
+        }[p.status] || '#8899AA';
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><strong>${p.name}</strong></td>
+            <td>${p.service}</td>
+            <td>${p.type}</td>
+            <td>£${p.cost.toFixed(1)}bn</td>
+            <td>${p.start} – ${p.end}</td>
+            <td><span style="color:${statusColor};font-weight:600">${p.status}</span></td>
+            <td><div class="programme-bar" style="width:${(p.cost/maxCost*100).toFixed(0)}%;background:${statusColor}"></div></td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function updateKPIs() {
+    const [s, e] = getRange();
+    const latestIdx = e;
+    const firstIdx = s;
+
+    const totalR = deflate(DATA.totalNominal);
+    const persR = deflate(DATA.personnelNominal);
+    const equipR = deflate(DATA.equipmentNominal);
+
+    const latestTotal = totalR[latestIdx];
+    const firstTotal = totalR[firstIdx];
+    const totalChange = ((latestTotal - firstTotal) / firstTotal * 100).toFixed(0);
+
+    document.getElementById('kpiTotal').textContent = '£' + latestTotal.toFixed(1) + 'bn';
+    document.getElementById('kpiTotalChange').textContent = (totalChange >= 0 ? '+' : '') + totalChange + '% vs ' + fyLabel(DATA.years[firstIdx]);
+    document.getElementById('kpiTotalChange').className = 'change ' + (totalChange >= 0 ? 'up' : 'down');
+
+    document.getElementById('kpiGDP').textContent = DATA.gdpPct[latestIdx] + '%';
+    const gdpChange = (DATA.gdpPct[latestIdx] - DATA.gdpPct[firstIdx]).toFixed(1);
+    document.getElementById('kpiGDPChange').textContent = (gdpChange >= 0 ? '+' : '') + gdpChange + 'pp vs ' + fyLabel(DATA.years[firstIdx]);
+    document.getElementById('kpiGDPChange').className = 'change ' + (gdpChange >= 0 ? 'up' : 'down');
+
+    const latestCoreBudget = totalR[latestIdx];
+    const persPct = (persR[latestIdx] / latestCoreBudget * 100).toFixed(0);
+    const equipPct = (equipR[latestIdx] / latestCoreBudget * 100).toFixed(0);
+    const firstPersPct = (persR[firstIdx] / totalR[firstIdx] * 100).toFixed(0);
+    const firstEquipPct = (equipR[firstIdx] / totalR[firstIdx] * 100).toFixed(0);
+
+    document.getElementById('kpiPersonnel').textContent = persPct + '%';
+    const persChange = (persPct - firstPersPct).toFixed(0);
+    document.getElementById('kpiPersonnelChange').textContent = (persChange >= 0 ? '+' : '') + persChange + 'pp vs ' + fyLabel(DATA.years[firstIdx]);
+    document.getElementById('kpiPersonnelChange').className = 'change ' + (persChange <= 0 ? 'up' : 'down');
+
+    document.getElementById('kpiEquipment').textContent = equipPct + '%';
+    const equipChange = (equipPct - firstEquipPct).toFixed(0);
+    document.getElementById('kpiEquipmentChange').textContent = (equipChange >= 0 ? '+' : '') + equipChange + 'pp vs ' + fyLabel(DATA.years[firstIdx]);
+    document.getElementById('kpiEquipmentChange').className = 'change ' + (equipChange >= 0 ? 'up' : 'down');
+
+    const latestStrength = DATA.army[latestIdx] + DATA.navy[latestIdx] + DATA.raf[latestIdx];
+    const firstStrength = DATA.army[firstIdx] + DATA.navy[firstIdx] + DATA.raf[firstIdx];
+    document.getElementById('kpiStrength').textContent = latestStrength + 'k';
+    const strChange = ((latestStrength - firstStrength) / firstStrength * 100).toFixed(0);
+    document.getElementById('kpiStrengthChange').textContent = strChange + '% vs ' + fyLabel(DATA.years[firstIdx]);
+    document.getElementById('kpiStrengthChange').className = 'change ' + (strChange >= 0 ? 'up' : 'down');
+
+    const perHead = ((latestTotal * 1e9) / (latestStrength * 1000) / 1000).toFixed(0);
+    const firstPerHead = ((firstTotal * 1e9) / (firstStrength * 1000) / 1000).toFixed(0);
+    document.getElementById('kpiPerHead').textContent = '£' + Number(perHead).toLocaleString() + 'k';
+    const phChange = ((perHead - firstPerHead) / firstPerHead * 100).toFixed(0);
+    document.getElementById('kpiPerHeadChange').textContent = '+' + phChange + '% vs ' + fyLabel(DATA.years[firstIdx]);
+    document.getElementById('kpiPerHeadChange').className = 'change up';
+}
+
+// ============================================
+// CONTROLS
+// ============================================
+
+function setPriceBasis(basis) {
+    priceBasis = basis;
+    document.getElementById('btnReal').classList.toggle('active', basis === 'real');
+    document.getElementById('btnNominal').classList.toggle('active', basis === 'nominal');
+    rebuildAll();
+}
+
+function toggleEvents() {
+    showEvents = !showEvents;
+    document.getElementById('btnEvents').classList.toggle('active', showEvents);
+    rebuildAll();
+}
+
+function setMainChart(mode) {
+    mainChartMode = mode;
+    document.getElementById('tabStacked').classList.toggle('active', mode === 'stacked');
+    document.getElementById('tabLine').classList.toggle('active', mode === 'line');
+    document.getElementById('tabPct').classList.toggle('active', mode === 'pct');
+    buildMainChart();
+}
+
+document.getElementById('yearStart').addEventListener('input', function() {
+    yearRange[0] = parseInt(this.value);
+    if (yearRange[0] > yearRange[1]) { yearRange[1] = yearRange[0]; document.getElementById('yearEnd').value = yearRange[1]; }
+    document.getElementById('yearStartVal').textContent = fyLabel(yearRange[0]);
+    document.getElementById('yearEndVal').textContent = fyLabel(yearRange[1]);
+    rebuildAll();
+});
+
+document.getElementById('yearEnd').addEventListener('input', function() {
+    yearRange[1] = parseInt(this.value);
+    if (yearRange[1] < yearRange[0]) { yearRange[0] = yearRange[1]; document.getElementById('yearStart').value = yearRange[0]; }
+    document.getElementById('yearStartVal').textContent = fyLabel(yearRange[0]);
+    document.getElementById('yearEndVal').textContent = fyLabel(yearRange[1]);
+    rebuildAll();
+});
+
+function rebuildAll() {
+    buildMainChart();
+    buildGDPChart();
+    buildWorkforceChart();
+    buildPerHeadChart();
+    buildRatioChart();
+    updateKPIs();
+    buildEventLegend();
+}
+
+function buildEventLegend() {
+    const el = document.getElementById('eventLegend');
+    if (!showEvents) { el.innerHTML = ''; return; }
+    const [s, e] = getRange();
+    const visible = EVENTS.filter(ev => Math.floor(ev.year) >= DATA.years[s] && Math.floor(ev.year) <= DATA.years[e]);
+    el.innerHTML = visible.map(ev =>
+        `<div class="event-legend-item"><div class="dot" style="background:${ev.color}"></div>${ev.label} (${Math.floor(ev.year)})</div>`
+    ).join('');
+}
+
+// Initial render
+Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+rebuildAll();
+buildProgrammesTable();
+</script>
+
+</body>
+</html>

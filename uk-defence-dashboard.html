@@ -418,6 +418,8 @@
             <button class="active" onclick="setMainChart('stacked')" id="tabStacked">Stacked Area</button>
             <button onclick="setMainChart('line')" id="tabLine">Line</button>
             <button onclick="setMainChart('pct')" id="tabPct">% Composition</button>
+            <button onclick="togglePersonnelSplit()" id="tabPersSplit" style="margin-left:auto;font-style:italic">Split Personnel</button>
+            <button onclick="toggleNuclearSplit()" id="tabNukeSplit" style="font-style:italic">Split Nuclear</button>
         </div>
         <div class="chart-wrap">
             <canvas id="mainChart"></canvas>
@@ -443,7 +445,25 @@
         </div>
     </div>
 
-    <!-- Spend per head and equipment plan -->
+    <!-- Personnel breakdown and nuclear deterrent -->
+    <div class="chart-row">
+        <div class="chart-container">
+            <h2>Personnel Spending Breakdown</h2>
+            <p class="chart-desc">Wages (military + civilian pay), pensions (AFPS + civilian), and other personnel costs (allowances, social security, recruitment)</p>
+            <div class="chart-wrap">
+                <canvas id="personnelChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-container">
+            <h2>Nuclear Deterrent Costs</h2>
+            <p class="chart-desc">Nuclear spending as share of equipment budget and total defence budget. Includes Vanguard/Dreadnought build, AWE warhead programme, Trident missiles</p>
+            <div class="chart-wrap">
+                <canvas id="nuclearChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Spend per head and ratio -->
     <div class="chart-row">
         <div class="chart-container">
             <h2>Spend per Regular Serviceperson</h2>
@@ -454,7 +474,7 @@
         </div>
         <div class="chart-container">
             <h2>Equipment vs Personnel Spending</h2>
-            <p class="chart-desc">Relative share of the two largest budget categories over time</p>
+            <p class="chart-desc">Relative share of the two largest budget categories, with and without nuclear deterrent costs</p>
             <div class="chart-wrap">
                 <canvas id="ratioChart"></canvas>
             </div>
@@ -566,11 +586,39 @@ const DATA = {
     // Category breakdowns - nominal £bn
     // Approximate splits based on IFS Green Budget 2025, MOD Dept Resources, HoC CBP-8175
     // Personnel share: ~42% (1985) declining to ~29% (2024). Equipment: ~36% rising to ~36% but dipping mid-period
-    // Personnel (military pay, civilian pay, pensions, allowances)
+
+    // Personnel total (military pay, civilian pay, pensions, allowances)
     personnelNominal: [7.6,7.7,7.9,7.9,8.5,9.0,9.5,9.5,9.5,9.4,9.0,9.3,9.0,9.3,9.4,9.6,9.8,10.4,10.8,11.0,11.6,12.6,13.5,14.0,14.5,14.6,13.4,12.4,12.6,12.7,12.7,12.4,12.4,11.8,11.5,13.6,14.2,15.8,15.6,17.5],
 
-    // Equipment, support & R&D (incl. nuclear deterrent)
+    // Personnel sub-categories (nominal £bn)
+    // Source: MOD Annual Reports, UKDS Table 1.5, MOD Dept Resources
+    // Wages = military service pay + civilian pay. Pensions = AFPS + civilian pensions.
+    // Other personnel = allowances (X-factor, operational, food & accommodation), social security costs, recruitment & training costs
+
+    // Military service pay + civilian pay
+    // Military pay grew per-head but headcount fell; civilian pay fell with workforce
+    // In 1985: ~326k military + ~170k civilians. By 2024: ~137k military + ~56k civilians
+    wagesNominal: [4.9,5.0,5.1,5.1,5.5,5.8,6.1,6.0,5.9,5.8,5.5,5.6,5.4,5.5,5.6,5.7,5.8,6.1,6.4,6.5,6.8,7.4,7.9,8.2,8.5,8.4,7.6,7.0,7.1,7.1,7.1,6.9,6.8,6.4,6.2,7.3,7.5,8.3,8.0,9.0],
+
+    // Armed Forces Pension Scheme (AFPS) + civilian pensions + employers' pension contributions
+    // Pensions have grown steadily: maturing AFPS 75 scheme, introduction of AFPS 05/15,
+    // rising employers' contributions. War pensions moved to Veterans UK / DWP from ~2001
+    pensionsNominal: [1.2,1.2,1.3,1.3,1.4,1.5,1.6,1.7,1.8,1.8,1.8,1.9,1.9,2.0,2.0,2.1,2.2,2.4,2.5,2.6,2.8,3.1,3.4,3.5,3.7,3.9,3.7,3.5,3.6,3.7,3.8,3.8,3.9,3.8,3.8,4.5,4.8,5.4,5.5,6.2],
+
+    // Other personnel: allowances (X-factor, LOA, operational), social security,
+    // recruitment, resettlement, movements, medical, and other personnel-related costs
+    otherPersonnelNominal: [1.5,1.5,1.5,1.5,1.6,1.7,1.8,1.8,1.8,1.8,1.7,1.8,1.7,1.8,1.8,1.8,1.8,1.9,1.9,1.9,2.0,2.1,2.2,2.3,2.3,2.3,2.1,1.9,1.9,1.9,1.8,1.7,1.7,1.6,1.5,1.8,1.9,2.1,2.1,2.3],
+
+    // Equipment, support & R&D (total incl. nuclear deterrent)
     equipmentNominal: [6.6,6.6,6.8,6.9,7.5,7.8,8.2,8.2,8.0,7.9,7.5,7.8,7.6,7.8,8.0,8.4,8.7,9.4,10.0,10.5,11.6,12.9,14.6,15.1,16.1,15.5,14.2,13.2,13.4,13.8,14.5,15.1,16.4,17.5,18.8,19.1,21.0,24.5,25.0,27.4],
+
+    // Nuclear deterrent costs (subset of equipment) - nominal £bn
+    // Source: HoC Library CBP-8166, MOD Equipment Plan, CND analysis
+    // Includes: Vanguard/Dreadnought submarine build, warhead programme (AWE),
+    // Trident missile system, in-service support. ~6% of defence budget in 1990s,
+    // rising to ~15-16% by 2024/25 as Dreadnought build ramps up
+    // Nuclear is ~half of total equipment spending by 2023/24
+    nuclearNominal: [1.0,1.1,1.2,1.3,1.5,1.6,1.7,1.7,1.6,1.5,1.4,1.4,1.3,1.3,1.3,1.4,1.5,1.6,1.7,1.8,2.0,2.2,2.5,2.6,2.8,2.9,3.0,3.0,3.1,3.3,3.5,3.8,4.2,4.8,5.4,5.8,6.4,7.8,9.0,9.4],
 
     // Infrastructure, estates, IT, admin
     infrastructureNominal: [2.0,2.1,2.2,2.3,2.5,2.6,2.7,2.7,2.8,2.8,2.6,2.7,2.6,2.7,2.7,2.7,2.9,3.0,3.2,3.6,3.7,4.4,4.8,4.9,5.0,4.7,4.8,4.4,4.3,4.0,3.9,3.8,3.7,4.2,4.5,4.5,4.8,5.5,5.6,6.2],
@@ -663,8 +711,10 @@ let priceBasis = 'real';
 let showEvents = true;
 let mainChartMode = 'stacked';
 let yearRange = [1985, 2024];
+let splitPersonnel = false;
+let splitNuclear = false;
 
-let mainChart, gdpChart, workforceChart, perHeadChart, ratioChart;
+let mainChart, gdpChart, workforceChart, perHeadChart, ratioChart, personnelChart, nuclearChart;
 
 function deflate(nominalArray) {
     return nominalArray.map((v, i) => priceBasis === 'real' ? +(v / DATA.deflator[i] * 100).toFixed(2) : v);
@@ -724,27 +774,57 @@ function buildMainChart() {
 
     const labels = getLabels();
     const personnel = deflate(sliceData(DATA.personnelNominal));
+    const wages = deflate(sliceData(DATA.wagesNominal));
+    const pensions = deflate(sliceData(DATA.pensionsNominal));
+    const otherPers = deflate(sliceData(DATA.otherPersonnelNominal));
     const equipment = deflate(sliceData(DATA.equipmentNominal));
+    const nuclear = deflate(sliceData(DATA.nuclearNominal));
+    const equipConv = equipment.map((v, i) => +(v - nuclear[i]).toFixed(2));
     const infrastructure = deflate(sliceData(DATA.infrastructureNominal));
     const other = deflate(sliceData(DATA.otherNominal));
     const nacmo = deflate(sliceData(DATA.nacmoNominal));
 
     const priceLabel = priceBasis === 'real' ? '2023/24 prices' : 'nominal';
 
+    // Build datasets based on split toggles
+    function makeDs(label, data, bg, border, opts) {
+        const isStacked = mainChartMode === 'stacked';
+        return {
+            label, data,
+            backgroundColor: bg,
+            borderColor: border,
+            borderWidth: isStacked ? 0 : 2,
+            fill: isStacked,
+            stack: isStacked ? 's' : undefined,
+            tension: 0.3,
+            pointRadius: isStacked ? 0 : 2,
+            ...opts
+        };
+    }
+
     if (mainChartMode === 'pct') {
         // Percentage composition
+        let datasets = [];
         const totals = personnel.map((v, i) => v + equipment[i] + infrastructure[i] + other[i]);
+        if (splitPersonnel) {
+            datasets.push({label:'Wages (Pay)', data: wages.map((v,i) => (v/totals[i]*100).toFixed(1)), backgroundColor:'rgba(78,154,245,0.85)', stack:'s'});
+            datasets.push({label:'Pensions', data: pensions.map((v,i) => (v/totals[i]*100).toFixed(1)), backgroundColor:'rgba(100,180,255,0.85)', stack:'s'});
+            datasets.push({label:'Other Personnel', data: otherPers.map((v,i) => (v/totals[i]*100).toFixed(1)), backgroundColor:'rgba(50,110,200,0.6)', stack:'s'});
+        } else {
+            datasets.push({label:'Personnel', data: personnel.map((v,i) => (v/totals[i]*100).toFixed(1)), backgroundColor:'rgba(78,154,245,0.85)', stack:'s'});
+        }
+        if (splitNuclear) {
+            datasets.push({label:'Nuclear Deterrent', data: nuclear.map((v,i) => (v/totals[i]*100).toFixed(1)), backgroundColor:'rgba(255,80,80,0.85)', stack:'s'});
+            datasets.push({label:'Conventional Equipment', data: equipConv.map((v,i) => (v/totals[i]*100).toFixed(1)), backgroundColor:'rgba(232,87,74,0.6)', stack:'s'});
+        } else {
+            datasets.push({label:'Equipment & Support', data: equipment.map((v,i) => (v/totals[i]*100).toFixed(1)), backgroundColor:'rgba(232,87,74,0.85)', stack:'s'});
+        }
+        datasets.push({label:'Infrastructure & Admin', data: infrastructure.map((v,i) => (v/totals[i]*100).toFixed(1)), backgroundColor:'rgba(91,184,138,0.85)', stack:'s'});
+        datasets.push({label:'Other', data: other.map((v,i) => (v/totals[i]*100).toFixed(1)), backgroundColor:'rgba(176,124,232,0.85)', stack:'s'});
+
         mainChart = new Chart(ctx, {
             type: 'bar',
-            data: {
-                labels,
-                datasets: [
-                    {label:'Personnel', data: personnel.map((v,i) => (v/totals[i]*100).toFixed(1)), backgroundColor: 'rgba(78,154,245,0.85)', stack:'s'},
-                    {label:'Equipment & Support', data: equipment.map((v,i) => (v/totals[i]*100).toFixed(1)), backgroundColor: 'rgba(232,87,74,0.85)', stack:'s'},
-                    {label:'Infrastructure & Admin', data: infrastructure.map((v,i) => (v/totals[i]*100).toFixed(1)), backgroundColor: 'rgba(91,184,138,0.85)', stack:'s'},
-                    {label:'Other', data: other.map((v,i) => (v/totals[i]*100).toFixed(1)), backgroundColor: 'rgba(176,124,232,0.85)', stack:'s'}
-                ]
-            },
+            data: { labels, datasets },
             options: {
                 responsive: true,
                 interaction: { mode: 'index', intersect: false },
@@ -761,69 +841,27 @@ function buildMainChart() {
         });
     } else {
         const isStacked = mainChartMode === 'stacked';
+        let datasets = [];
+        if (splitPersonnel) {
+            datasets.push(makeDs('Wages (Pay)', wages, 'rgba(78,154,245,0.75)', '#4E9AF5'));
+            datasets.push(makeDs('Pensions', pensions, 'rgba(100,180,255,0.75)', '#64B4FF'));
+            datasets.push(makeDs('Other Personnel', otherPers, 'rgba(50,110,200,0.5)', '#326EC8'));
+        } else {
+            datasets.push(makeDs('Personnel', personnel, 'rgba(78,154,245,0.75)', '#4E9AF5'));
+        }
+        if (splitNuclear) {
+            datasets.push(makeDs('Nuclear Deterrent', nuclear, 'rgba(255,80,80,0.75)', '#FF5050'));
+            datasets.push(makeDs('Conventional Equipment', equipConv, 'rgba(232,87,74,0.55)', '#C84A3A'));
+        } else {
+            datasets.push(makeDs('Equipment & Support', equipment, 'rgba(232,87,74,0.75)', '#E8574A'));
+        }
+        datasets.push(makeDs('Infrastructure & Admin', infrastructure, 'rgba(91,184,138,0.75)', '#5BB88A'));
+        datasets.push(makeDs('Other', other, 'rgba(176,124,232,0.75)', '#B07CE8'));
+        datasets.push(makeDs('Operations (NACMO)', nacmo, 'rgba(245,166,35,0.75)', '#F5A623', {borderDash: isStacked ? undefined : [5, 3]}));
+
         mainChart = new Chart(ctx, {
             type: isStacked ? 'bar' : 'line',
-            data: {
-                labels,
-                datasets: [
-                    {
-                        label: 'Personnel',
-                        data: personnel,
-                        backgroundColor: 'rgba(78,154,245,0.75)',
-                        borderColor: '#4E9AF5',
-                        borderWidth: isStacked ? 0 : 2,
-                        fill: isStacked,
-                        stack: isStacked ? 's' : undefined,
-                        tension: 0.3,
-                        pointRadius: isStacked ? 0 : 2
-                    },
-                    {
-                        label: 'Equipment & Support',
-                        data: equipment,
-                        backgroundColor: 'rgba(232,87,74,0.75)',
-                        borderColor: '#E8574A',
-                        borderWidth: isStacked ? 0 : 2,
-                        fill: isStacked,
-                        stack: isStacked ? 's' : undefined,
-                        tension: 0.3,
-                        pointRadius: isStacked ? 0 : 2
-                    },
-                    {
-                        label: 'Infrastructure & Admin',
-                        data: infrastructure,
-                        backgroundColor: 'rgba(91,184,138,0.75)',
-                        borderColor: '#5BB88A',
-                        borderWidth: isStacked ? 0 : 2,
-                        fill: isStacked,
-                        stack: isStacked ? 's' : undefined,
-                        tension: 0.3,
-                        pointRadius: isStacked ? 0 : 2
-                    },
-                    {
-                        label: 'Other',
-                        data: other,
-                        backgroundColor: 'rgba(176,124,232,0.75)',
-                        borderColor: '#B07CE8',
-                        borderWidth: isStacked ? 0 : 2,
-                        fill: isStacked,
-                        stack: isStacked ? 's' : undefined,
-                        tension: 0.3,
-                        pointRadius: isStacked ? 0 : 2
-                    },
-                    {
-                        label: 'Operations (NACMO)',
-                        data: nacmo,
-                        backgroundColor: 'rgba(245,166,35,0.75)',
-                        borderColor: '#F5A623',
-                        borderWidth: isStacked ? 0 : 2,
-                        fill: isStacked,
-                        stack: isStacked ? 's' : undefined,
-                        tension: 0.3,
-                        pointRadius: isStacked ? 0 : 2,
-                        borderDash: isStacked ? undefined : [5, 3]
-                    }
-                ]
-            },
+            data: { labels, datasets },
             options: {
                 responsive: true,
                 interaction: { mode: 'index', intersect: false },
@@ -1044,6 +1082,142 @@ function buildPerHeadChart() {
     });
 }
 
+function buildPersonnelChart() {
+    const ctx = document.getElementById('personnelChart').getContext('2d');
+    if (personnelChart) personnelChart.destroy();
+
+    const labels = getLabels();
+    const wagesR = deflate(sliceData(DATA.wagesNominal));
+    const pensionsR = deflate(sliceData(DATA.pensionsNominal));
+    const otherPersR = deflate(sliceData(DATA.otherPersonnelNominal));
+    const priceLabel = priceBasis === 'real' ? '2023/24 prices' : 'nominal';
+
+    personnelChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [
+                {label:'Wages (Military + Civilian Pay)', data: wagesR, backgroundColor:'rgba(78,154,245,0.8)', stack:'s'},
+                {label:'Pensions (AFPS + Civilian)', data: pensionsR, backgroundColor:'rgba(100,180,255,0.8)', stack:'s'},
+                {label:'Other (Allowances, SS, Recruitment)', data: otherPersR, backgroundColor:'rgba(50,110,200,0.6)', stack:'s'}
+            ]
+        },
+        options: {
+            responsive: true,
+            interaction: { mode: 'index', intersect: false },
+            scales: {
+                x: { ticks: { color: '#8899AA', maxRotation: 45, font: {size: 9} }, grid: { color: '#1E3148' }},
+                y: {
+                    stacked: true,
+                    ticks: { color: '#8899AA', callback: v => '£' + v + 'bn' },
+                    grid: { color: '#1E3148' },
+                    title: { display: true, text: '£ billion (' + priceLabel + ')', color: '#8899AA' }
+                }
+            },
+            plugins: {
+                legend: { labels: { color: '#E8E8E8', boxWidth: 12, font: {size: 10} }},
+                annotation: { annotations: getEventAnnotations() },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => ctx.dataset.label + ': £' + ctx.parsed.y.toFixed(1) + 'bn',
+                        footer: items => {
+                            const total = items.reduce((s, i) => s + i.parsed.y, 0);
+                            return 'Total Personnel: £' + total.toFixed(1) + 'bn';
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function buildNuclearChart() {
+    const ctx = document.getElementById('nuclearChart').getContext('2d');
+    if (nuclearChart) nuclearChart.destroy();
+
+    const labels = getLabels();
+    const totalR = deflate(sliceData(DATA.totalNominal));
+    const equipR = deflate(sliceData(DATA.equipmentNominal));
+    const nukeR = deflate(sliceData(DATA.nuclearNominal));
+    const nukePctTotal = nukeR.map((v, i) => +(v / totalR[i] * 100).toFixed(1));
+    const nukePctEquip = nukeR.map((v, i) => +(v / equipR[i] * 100).toFixed(1));
+
+    nuclearChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: '% of Total Defence Budget',
+                    data: nukePctTotal,
+                    borderColor: '#FF5050',
+                    backgroundColor: 'rgba(255,80,80,0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 2,
+                    borderWidth: 2.5,
+                    yAxisID: 'y'
+                },
+                {
+                    label: '% of Equipment Budget',
+                    data: nukePctEquip,
+                    borderColor: '#F5A623',
+                    backgroundColor: 'rgba(245,166,35,0.05)',
+                    fill: false,
+                    tension: 0.3,
+                    pointRadius: 2,
+                    borderWidth: 2,
+                    borderDash: [5, 3],
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Nuclear Spend (£bn)',
+                    data: nukeR,
+                    borderColor: '#C8A95188',
+                    backgroundColor: 'rgba(200,169,81,0.15)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 0,
+                    borderWidth: 1,
+                    yAxisID: 'y1',
+                    type: 'bar'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            interaction: { mode: 'index', intersect: false },
+            scales: {
+                x: { ticks: { color: '#8899AA', maxRotation: 45, font: {size: 9} }, grid: { color: '#1E3148' }},
+                y: {
+                    position: 'left',
+                    ticks: { color: '#8899AA', callback: v => v + '%' },
+                    grid: { color: '#1E3148' },
+                    title: { display: true, text: 'Share (%)', color: '#8899AA' }
+                },
+                y1: {
+                    position: 'right',
+                    ticks: { color: '#C8A951', callback: v => '£' + v + 'bn' },
+                    grid: { display: false },
+                    title: { display: true, text: '£bn (' + (priceBasis === 'real' ? '2023/24' : 'nominal') + ')', color: '#C8A951' }
+                }
+            },
+            plugins: {
+                legend: { labels: { color: '#E8E8E8', boxWidth: 12, font: {size: 10} }},
+                annotation: { annotations: getEventAnnotations() },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => {
+                            if (ctx.datasetIndex === 2) return 'Nuclear: £' + ctx.parsed.y.toFixed(1) + 'bn';
+                            return ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(1) + '%';
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
 function buildRatioChart() {
     const ctx = document.getElementById('ratioChart').getContext('2d');
     if (ratioChart) ratioChart.destroy();
@@ -1052,8 +1226,11 @@ function buildRatioChart() {
     const totalR = deflate(sliceData(DATA.totalNominal));
     const persR = deflate(sliceData(DATA.personnelNominal));
     const equipR = deflate(sliceData(DATA.equipmentNominal));
+    const nukeR = deflate(sliceData(DATA.nuclearNominal));
     const persPct = persR.map((v, i) => +(v / totalR[i] * 100).toFixed(1));
     const equipPct = equipR.map((v, i) => +(v / totalR[i] * 100).toFixed(1));
+    const equipExNukePct = equipR.map((v, i) => +((v - nukeR[i]) / totalR[i] * 100).toFixed(1));
+    const nukePct = nukeR.map((v, i) => +(v / totalR[i] * 100).toFixed(1));
 
     ratioChart = new Chart(ctx, {
         type: 'line',
@@ -1071,10 +1248,31 @@ function buildRatioChart() {
                     borderWidth: 2
                 },
                 {
-                    label: 'Equipment & Support %',
+                    label: 'Equipment (total) %',
                     data: equipPct,
                     borderColor: '#E8574A',
                     backgroundColor: 'rgba(232,87,74,0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 2,
+                    borderWidth: 2
+                },
+                {
+                    label: 'Equipment (ex. nuclear) %',
+                    data: equipExNukePct,
+                    borderColor: '#C84A3A',
+                    backgroundColor: 'transparent',
+                    fill: false,
+                    tension: 0.3,
+                    pointRadius: 2,
+                    borderWidth: 2,
+                    borderDash: [5, 3]
+                },
+                {
+                    label: 'Nuclear deterrent %',
+                    data: nukePct,
+                    borderColor: '#FF5050',
+                    backgroundColor: 'rgba(255,80,80,0.1)',
                     fill: true,
                     tension: 0.3,
                     pointRadius: 2,
@@ -1210,6 +1408,18 @@ function setMainChart(mode) {
     buildMainChart();
 }
 
+function togglePersonnelSplit() {
+    splitPersonnel = !splitPersonnel;
+    document.getElementById('tabPersSplit').classList.toggle('active', splitPersonnel);
+    buildMainChart();
+}
+
+function toggleNuclearSplit() {
+    splitNuclear = !splitNuclear;
+    document.getElementById('tabNukeSplit').classList.toggle('active', splitNuclear);
+    buildMainChart();
+}
+
 document.getElementById('yearStart').addEventListener('input', function() {
     yearRange[0] = parseInt(this.value);
     if (yearRange[0] > yearRange[1]) { yearRange[1] = yearRange[0]; document.getElementById('yearEnd').value = yearRange[1]; }
@@ -1230,6 +1440,8 @@ function rebuildAll() {
     buildMainChart();
     buildGDPChart();
     buildWorkforceChart();
+    buildPersonnelChart();
+    buildNuclearChart();
     buildPerHeadChart();
     buildRatioChart();
     updateKPIs();
